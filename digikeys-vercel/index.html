@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DigiKeys Store – Instant Digital Licences & Tech</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --accent: #00e5ff;
+    --accent2: #7b61ff;
+    --gold: #ffd166;
+    --text: #e8e8f0;
+    --muted: #8888aa;
+    --border: rgba(255,255,255,0.07);
+    --glow: 0 0 40px rgba(0,229,255,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 5vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-left: 2rem;
+    transition: color 0.2s;
+  }
+  nav a:hover { color: var(--text); }
+
+  .badge-live {
+    background: var(--accent);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-left: 1rem;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 80px 5vw 60px;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 16px;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 1rem;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 480px;
+    margin: 0 auto 2.5rem;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .trust-bar {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    animation: fadeUp 0.9s ease both;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .trust-item svg { color: var(--accent); }
+
+  /* Section */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 0 5vw 60px;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-tag {
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid rgba(0,229,255,0.2);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    gap: 1.2rem;
+  }
+
+  .grid-3 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0,229,255,0.25);
+    box-shadow: var(--glow);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+
+  .icon-blue { background: rgba(0,229,255,0.1); }
+  .icon-purple { background: rgba(123,97,255,0.1); }
+  .icon-gold { background: rgba(255,209,102,0.1); }
+
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.2px;
+  }
+
+  .card-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .price {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .price sup {
+    font-size: 0.75rem;
+    vertical-align: super;
+    margin-right: 1px;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.2px;
+  }
+
+  .btn:hover { opacity: 0.85; transform: scale(1.03); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+  }
+  .btn-outline:hover { background: rgba(123,97,255,0.1); opacity: 1; }
+
+  /* Laptop cards */
+  .laptop-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .laptop-img-box {
+    width: 140px;
+    height: 110px;
+    background: linear-gradient(135deg, #1e1e30, #2a2a40);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+
+  .specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .spec-chip {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .laptop-price {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 0.8rem;
+  }
+
+  .badge-new {
+    display: inline-block;
+    background: var(--accent2);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .badge-popular {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--gold);
+    color: #000;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .delivery-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+
+  .delivery-note::before {
+    content: '⚡';
+    font-size: 0.8rem;
+  }
+
+  /* Footer */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 2rem 5vw;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  footer strong { color: var(--text); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    nav { display: none; }
+    .laptop-card { grid-template-columns: 1fr; }
+    .laptop-img-box { width: 100%; height: 120px; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Digi<span>Keys</span></div>
+  <nav>
+    <a href="#">Home</a>
+    <a href="#">Software</a>
+    <a href="#">Laptops</a>
+    <a href="#">Support</a>
+  </nav>
+  <span class="badge-live">● Live</span>
+</header>
+
+<div class="hero">
+  <div class="hero-tag">UK Digital Store</div>
+  <h1>Instant Digital Licences<br>& <em>Premium Tech</em></h1>
+  <p>Genuine activation keys delivered in minutes. Samsung laptops shipped to your door. All prices in GBP.</p>
+  <div class="trust-bar">
+    <div class="trust-item">
+      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm3.5 7.5a.5.5 0 0 0 0-1H5.707l2.147-2.146a.5.5 0 1 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L5.707 7.5H11.5z"/></svg>
+      Instant delivery
+    </div>
+    <div class="trust-item">
+      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm3.5 7.5a.5.5 0 0 0 0-1H5.707l2.147-2.146a.5.5 0 1 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L5.707 7.5H11.5z"/></svg>
+      Genuine keys
+    </div>
+    <div class="trust-item">
+      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm3.5 7.5a.5.5 0 0 0 0-1H5.707l2.147-2.146a.5.5 0 1 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L5.707 7.5H11.5z"/></svg>
+      UK support
+    </div>
+    <div class="trust-item">
+      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm3.5 7.5a.5.5 0 0 0 0-1H5.707l2.147-2.146a.5.5 0 1 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L5.707 7.5H11.5z"/></svg>
+      28-day guarantee
+    </div>
+  </div>
+</div>
+
+<!-- Digital Keys -->
+<section>
+  <div class="section-header">
+    <div class="section-title">🔑 Windows Licences</div>
+    <div class="section-line"></div>
+    <div class="section-tag">Digital · Instant</div>
+  </div>
+  <div class="grid grid-3">
+
+    <div class="card">
+      <div class="badge-popular">Most Popular</div>
+      <div class="card-icon icon-blue">🪟</div>
+      <div class="card-name">Windows 11 Home</div>
+      <div class="card-desc">Perfect for home users. Includes the full Windows 11 experience with security updates, personalisation, and Microsoft Store access. 1 PC licence.</div>
+      <div class="card-footer">
+        <div class="price"><sup>£</sup>7.99</div>
+        <button class="btn" onclick="checkout('price_1TR5H0DsdOtEWFtkPpVwiDjA')">Buy Now</button>
+      </div>
+      <div class="delivery-note">Key delivered within 5 minutes</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon icon-blue">🪟</div>
+      <div class="card-name">Windows 11 Pro</div>
+      <div class="card-desc">Ideal for professionals and power users. Adds BitLocker encryption, Remote Desktop, Group Policy, and Hyper-V virtualisation. 1 PC licence.</div>
+      <div class="card-footer">
+        <div class="price"><sup>£</sup>9.99</div>
+        <button class="btn" onclick="checkout('price_1TR5I0DsdOtEWFtkhIiazAPe')">Buy Now</button>
+      </div>
+      <div class="delivery-note">Key delivered within 5 minutes</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon icon-blue">🪟</div>
+      <div class="card-name">Windows 10 Pro</div>
+      <div class="card-desc">Genuine Windows 10 Pro licence for existing systems. Supports both clean install and upgrade. Full BitLocker and enterprise features included.</div>
+      <div class="card-footer">
+        <div class="price"><sup>£</sup>6.99</div>
+        <button class="btn" onclick="checkout('price_1TR5JGDsdOtEWFtkx3iRRJI7')">Buy Now</button>
+      </div>
+      <div class="delivery-note">Key delivered within 5 minutes</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Office Keys -->
+<section>
+  <div class="section-header">
+    <div class="section-title">📊 Microsoft Office</div>
+    <div class="section-line"></div>
+    <div class="section-tag">Lifetime · One-time</div>
+  </div>
+  <div class="grid grid-3">
+
+    <div class="card">
+      <div class="card-icon icon-purple">📝</div>
+      <div class="card-name">Office 2024 Home & Student</div>
+      <div class="card-desc">Word, Excel, PowerPoint & OneNote. One-time purchase — no subscription. For Windows 10 & 11. Lifetime licence for 1 PC.</div>
+      <div class="card-footer">
+        <div class="price"><sup>£</sup>24.99</div>
+        <button class="btn" onclick="checkout('price_1TR5K0DsdOtEWFtkE5IpqV2m')">Buy Now</button>
+      </div>
+      <div class="delivery-note">Key delivered within 5 minutes</div>
+    </div>
+
+    <div class="card">
+      <div class="badge-popular">Best Value</div>
+      <div class="card-icon icon-purple">💼</div>
+      <div class="card-name">Office 2024 Professional Plus</div>
+      <div class="card-desc">Full suite — Word, Excel, PowerPoint, Outlook, OneNote, Access & Teams. Lifetime licence for 1 PC. No subscription ever required.</div>
+      <div class="card-footer">
+        <div class="price"><sup>£</sup>34.99</div>
+        <button class="btn" onclick="checkout('price_1TR5KaDsdOtEWFtkwiKH7Ywb')">Buy Now</button>
+      </div>
+      <div class="delivery-note">Key delivered within 5 minutes</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon icon-gold">♻️</div>
+      <div class="card-name">Office 2021 Professional Plus</div>
+      <div class="card-desc">Trusted previous generation. Full Office suite for 1 PC. Includes Word, Excel, PowerPoint, Outlook & more. Lifetime, no subscription.</div>
+      <div class="card-footer">
+        <div class="price"><sup>£</sup>19.99</div>
+        <button class="btn" onclick="checkout('price_1TR5LADsdOtEWFtkvGcnzk1q')">Buy Now</button>
+      </div>
+      <div class="delivery-note">Key delivered within 5 minutes</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Samsung Laptops -->
+<section>
+  <div class="section-header">
+    <div class="section-title">💻 Samsung Galaxy Book Laptops</div>
+    <div class="section-line"></div>
+    <div class="section-tag">Ships to UK</div>
+  </div>
+  <div class="grid grid-2">
+
+    <div class="card laptop-card">
+      <div class="laptop-img-box">💻</div>
+      <div>
+        <div class="card-name">
+          Samsung Galaxy Book5 Pro 360
+          <span class="badge-new">New</span>
+        </div>
+        <div class="card-desc" style="margin-bottom:0.8rem">Ultra 7 · 16GB RAM · 512GB SSD · 2-in-1 convertible. Premium AMOLED touchscreen with 360° hinge. AI-powered performance for professionals.</div>
+        <div class="specs">
+          <span class="spec-chip">Intel Ultra 7</span>
+          <span class="spec-chip">16GB RAM</span>
+          <span class="spec-chip">512GB SSD</span>
+          <span class="spec-chip">2-in-1</span>
+          <span class="spec-chip">AMOLED</span>
+        </div>
+        <div class="laptop-price">£1,400</div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+          <button class="btn" onclick="checkout('price_1TR5LgDsdOtEWFtkGsQYPrC2')">Add to Cart</button>
+          <button class="btn btn-outline">View Specs</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card laptop-card">
+      <div class="laptop-img-box">💻</div>
+      <div>
+        <div class="card-name">
+          Samsung Galaxy Book4 Pro 14"
+          <span class="badge-new">New</span>
+        </div>
+        <div class="card-desc" style="margin-bottom:0.8rem">Ultra 7 · 16GB RAM · 512GB SSD · Ultra-slim premium laptop with Dynamic AMOLED 2X display. All-day battery and Intel AI Boost ready.</div>
+        <div class="specs">
+          <span class="spec-chip">Intel Ultra 7</span>
+          <span class="spec-chip">16GB RAM</span>
+          <span class="spec-chip">512GB SSD</span>
+          <span class="spec-chip">14" AMOLED</span>
+          <span class="spec-chip">Ultra-slim</span>
+        </div>
+        <div class="laptop-price">£850</div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+          <button class="btn" onclick="checkout('price_1TR5MGDsdOtEWFtkLmMxmSfL')">Add to Cart</button>
+          <button class="btn btn-outline">View Specs</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Bundles -->
+<section>
+  <div class="section-header">
+    <div class="section-title">🎁 Bundle Deals</div>
+    <div class="section-line"></div>
+    <div class="section-tag">Save More</div>
+  </div>
+  <div class="grid grid-3">
+
+    <div class="card">
+      <div class="card-icon icon-blue">🪟📊</div>
+      <div class="card-name">Windows 11 Pro + Office 2024 Pro Plus</div>
+      <div class="card-desc">The ultimate productivity bundle. Get both Windows 11 Pro and Office 2024 Professional Plus at a discounted price. Instant delivery.</div>
+      <div class="card-footer">
+        <div>
+          <div style="font-size:0.75rem;color:var(--muted);text-decoration:line-through">£44.98</div>
+          <div class="price"><sup>£</sup>34.99</div>
+        </div>
+        <button class="btn">Buy Bundle</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon icon-purple">💻🔑</div>
+      <div class="card-name">Book4 Pro + Windows 11 Pro</div>
+      <div class="card-desc">Samsung Galaxy Book4 Pro laptop plus a Windows 11 Pro licence for a complete ready-to-go setup. Perfect combination.</div>
+      <div class="card-footer">
+        <div>
+          <div style="font-size:0.75rem;color:var(--muted);text-decoration:line-through">£859.99</div>
+          <div class="price"><sup>£</sup>849.99</div>
+        </div>
+        <button class="btn">Buy Bundle</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon icon-gold">💻📊</div>
+      <div class="card-name">Book4 Pro + Office 2024 Pro Plus</div>
+      <div class="card-desc">Samsung Galaxy Book4 Pro paired with Microsoft Office 2024 Professional Plus. Everything you need for work, study and creativity.</div>
+      <div class="card-footer">
+        <div>
+          <div style="font-size:0.75rem;color:var(--muted);text-decoration:line-through">£884.99</div>
+          <div class="price"><sup>£</sup>874.99</div>
+        </div>
+        <button class="btn">Buy Bundle</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <strong>DigiKeys Store</strong> · Genuine licences · UK support · All prices include VAT<br>
+  <span style="font-size:0.82rem;margin-top:0.6rem;display:block">📧 <a href="mailto:mtmgeek@outlook.com" style="color:var(--accent);text-decoration:none;">mtmgeek@outlook.com</a></span>
+  <span style="font-size:0.78rem;margin-top:0.3rem;display:block">📮 Unit 138573, PO Box 7169, Poole, BH15 9EL</span>
+  <span style="font-size:0.72rem;margin-top:0.6rem;display:block">Microsoft and Samsung are registered trademarks of their respective owners. DigiKeys is an independent reseller.</span>
+</footer>
+
+<script>
+  const stripe = Stripe('pk_live_51TR4wrDsdOtEWFtkgrEadgjSqf0dXw1t6M9LgnfeANnCnkcM1FLrEZhBVK6Jvz05rRoIs0AxEYlevaz2VspFwHBM00K3Oa1Asp');
+
+  async function checkout(priceId) {
+    const btn = event.currentTarget;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      });
+
+      const session = await response.json();
+
+      if (session.error) {
+        alert('Payment error: ' + session.error.message);
+        btn.disabled = false;
+        btn.textContent = originalText;
+        return;
+      }
+
+      await stripe.redirectToCheckout({ sessionId: session.id });
+
+    } catch(err) {
+      alert('Something went wrong. Please try again.');
+      btn.disabled = false;
+      btn.textContent = originalText;
+      console.error(err);
+    }
+  }
+
+  // Success banner
+  if (new URLSearchParams(window.location.search).get('success') === 'true') {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#00e5ff;color:#000;text-align:center;padding:14px;font-weight:700;z-index:9999;font-family:Syne,sans-serif;font-size:0.95rem;';
+    banner.textContent = '✅ Payment successful! Check your email for your key. Thank you!';
+    document.body.prepend(banner);
+    setTimeout(() => banner.remove(), 8000);
+  }
+</script>
+</body>
+</html>
